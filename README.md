@@ -55,6 +55,25 @@ deteriorated in 2023 as the market rotated and previous winners
 reversed — a well-known weakness of momentum strategies during 
 mean-reverting markets.
 
+### Benchmark Comparison
+To provide a point of reference, the cumulative performance of the momentum 
+strategy is plotted alongside the S&P 500 (SPY ETF) over the same period. 
+Both portfolios begin with an initial value of $1, allowing their growth to 
+be compared directly. The chart shows how the strategy performed relative to 
+a passive buy-and-hold investment in the broader U.S. equity market, making 
+it easier to assess whether the momentum approach added value over the benchmark.
+
+### Sharpe Ratio
+The strategy achieved a Sharpe ratio of 0.06 over the test period (2018–2024). 
+The Sharpe ratio measures the amount of return generated for each unit of risk 
+taken, with higher values indicating better risk-adjusted performance. A value 
+close to zero suggests that the strategy produced only a small return relative 
+to its volatility, meaning the simple implementation did not deliver strong 
+risk-adjusted performance. This highlights that while the backtester successfully 
+implements a momentum strategy, further improvements such as a larger investment 
+universe, transaction cost modelling, portfolio weighting, or risk management 
+techniques would likely be needed to produce more robust results.
+
 ## Libraries
 
 - `pandas` — data manipulation and time series resampling
