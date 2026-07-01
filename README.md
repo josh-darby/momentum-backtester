@@ -1,78 +1,84 @@
 # Momentum Factor Backtest (12-1 Strategy)
 
-A long-short momentum strategy that ranks stocks by past performance 
-and tests whether recent winners continue to outperform recent losers.
+A long-short momentum strategy that ranks stocks by past performance and tests whether recent winners continue to outperform recent losers.
 
 ## What is Momentum Investing?
 
-Momentum investing is based on the idea that stocks that have performed 
-well recently tend to continue outperforming, while stocks that have 
-performed poorly tend to continue underperforming.
-
-Rather than identifying undervalued companies, momentum investors focus 
-on the persistence of market trends — buying recent winners and shorting 
-recent losers. This strategy is based on the academic momentum factor 
-first documented by Jegadeesh and Titman (1993).
+Momentum investing is based on the idea that stocks that have performed well recently tend to continue outperforming, while stocks that have performed poorly tend to continue underperforming. Rather than identifying undervalued companies, momentum investors focus on the persistence of market trends — buying recent winners and shorting recent losers. This strategy is based on the academic momentum factor first documented by Jegadeesh and Titman (1993).
 
 ## Methodology
 
 ### Data
-Historical adjusted price data was downloaded via Yahoo Finance using 
-the `yfinance` library. The universe consisted of ten large-cap US stocks:
-AAPL, MSFT, GOOG, AMZN, META, TSLA, NVDA, JPM, V, UNH.
 
-Daily prices were resampled to monthly frequency by taking the final 
-closing price of each month.
+Historical adjusted price data was downloaded via Yahoo Finance using the `yfinance` library. The universe consists of 29 large-cap US stocks spanning nine sectors — technology, financials, healthcare, energy, consumer, industrials, media/communications, and materials/utilities — chosen to reduce sector concentration relative to a narrower, tech-heavy universe.
+
+Daily prices were resampled to monthly frequency by taking the final closing price of each month.
 
 ### The 12-1 Momentum Signal
-For each stock, the momentum score was calculated as the cumulative 
-return over the previous 11 months, skipping the most recent month. 
-This gives a signal based on returns from months t-12 to t-2.
 
-The most recent month is excluded because short-term price movements 
-tend to exhibit mean reversion, which weakens the signal.
+For each stock, the momentum score was calculated as the sum of monthly returns over the previous 11 months, skipping the most recent month. This gives a signal based on returns from months t-12 to t-2. The most recent month is excluded because short-term price movements tend to exhibit mean reversion, which weakens the signal.
 
 ### Portfolio Construction
+
 At the end of each month:
-- Stocks were ranked by momentum score
-- The top 3 stocks were held long (+1)
-- The bottom 3 stocks were held short (-1)
-- All other stocks were excluded (0)
+
+- Stocks are ranked by momentum score.
+- The top decile (~10%) of stocks are held long.
+- The bottom decile (~10%) are held short.
+- All other stocks are excluded.
+
+The number of long/short positions scales with the number of valid stocks available each month (accounting for missing data early in the backtest), rather than being fixed.
+
+Long and short positions are equal-weighted within each side of the portfolio, resulting in a dollar-neutral long-short portfolio.
 
 ### Avoiding Lookahead Bias
-Portfolio positions were shifted forward by one month before calculating 
-returns. This ensures that momentum signals calculated at the end of 
-month t are only applied to returns in month t+1 — reflecting what would 
-have been knowable in real time.
+
+Portfolio positions were shifted forward by one month before calculating returns. This ensures that momentum signals calculated at the end of month t are only applied to returns in month t+1 — reflecting what would have been knowable in real time.
+
+### Limitations
+
+This backtest uses a fixed universe of current large-cap constituents, which introduces survivorship bias — companies that were delisted, acquired, or went bankrupt during the test period are excluded, likely inflating returns relative to a point-in-time investable universe. Transaction costs are also not modelled, despite meaningful monthly turnover (see below).
 
 ## Results
 
-The equity curve tracks the growth of $1 invested in the strategy from 
-2018 to 2024. The strategy performed strongly during the post-pandemic 
-technology rally, peaking in early 2022 as momentum trends were 
-concentrated among a small number of high-growth stocks. Performance 
-deteriorated in 2023 as the market rotated and previous winners 
-reversed — a well-known weakness of momentum strategies during 
-mean-reverting markets.
+The equity curve tracks the growth of $1 invested in the strategy from 2018 to 2024. The S&P 500 is included as a passive benchmark to provide context for the strategy's performance.
 
-### Benchmark Comparison
-To provide a point of reference, the cumulative performance of the momentum 
-strategy is plotted alongside the S&P 500 (SPY ETF) over the same period. 
-Both portfolios begin with an initial value of $1, allowing their growth to 
-be compared directly. The chart shows how the strategy performed relative to 
-a passive buy-and-hold investment in the broader U.S. equity market, making 
-it easier to assess whether the momentum approach added value over the benchmark.
+![Equity Curve](equity_curve.png)
 
-### Sharpe Ratio
-The strategy achieved a Sharpe ratio of 0.06 over the test period (2018–2024). 
-The Sharpe ratio measures the amount of return generated for each unit of risk 
-taken, with higher values indicating better risk-adjusted performance. A value 
-close to zero suggests that the strategy produced only a small return relative 
-to its volatility, meaning the simple implementation did not deliver strong 
-risk-adjusted performance. This highlights that while the backtester successfully 
-implements a momentum strategy, further improvements such as a larger investment 
-universe, transaction cost modelling, portfolio weighting, or risk management 
-techniques would likely be needed to produce more robust results.
+The strategy generated its strongest performance during the sharp market recovery following the March 2020 COVID-19 sell-off, peaking at approximately $1.90 before giving back much of those gains as market leadership rotated.
+
+### Risk Metrics
+
+| Metric | Value |
+|---|---|
+| Annualised Return | 5.75% |
+| Annualised Volatility | 35.72% |
+| Sharpe Ratio | 0.16 |
+| Max Drawdown | -60.93% |
+| Hit Rate | 41.67% |
+| Avg Monthly Turnover | 52.78% |
+
+*Note: Sharpe ratio is calculated without subtracting a risk-free rate (i.e. assumes a 0% risk-free rate) for simplicity.*
+
+- **Sharpe Ratio**: risk-adjusted return — return earned per unit of volatility taken.
+- **Max Drawdown**: the largest peak-to-trough decline in portfolio value over the backtest period.
+- **Hit Rate**: the percentage of months with a positive return.
+- **Turnover**: the average monthly proportion of the portfolio replaced at each rebalance. Higher turnover generally implies higher transaction costs.
+
+### Interpretation
+
+The low Sharpe ratio (0.16) and hit rate (41.67%) indicate the strategy's profitability is concentrated in a small number of strong months — most notably the recovery following the March 2020 sell-off — rather than being consistently profitable. This pattern is consistent with a well-documented weakness of momentum strategies: momentum crashes (Daniel & Moskowitz, 2016), where sharp reversals following a market bottom cause short positions (recent losers) to rally while long positions (recent winners) stagnate, driving the strategy's -60.93% max drawdown.
+
+The high average monthly turnover (52.78%) suggests transaction costs, not modelled here, would meaningfully erode these already modest returns in practice.
+
+Overall, the backtest demonstrates that while a naïve implementation of the classic 12-1 momentum factor can capture periods of strong trend persistence, it also exhibits substantial drawdowns and high turnover. The results highlight why practical momentum strategies typically incorporate risk management, transaction cost modelling and more sophisticated portfolio construction techniques.
+
+## Possible Extensions
+
+- Volatility-scaled position sizing to reduce exposure to momentum crashes.
+- Transaction cost modelling to better reflect live tradability.
+- Point-in-time constituent data to address survivorship bias.
+- Sector-neutral construction to reduce concentration risk within the long/short legs.
 
 ## Libraries
 
